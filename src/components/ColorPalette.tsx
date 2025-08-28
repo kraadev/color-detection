@@ -1,220 +1,376 @@
-"use client";
-
-import React, { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Check, Copy } from "lucide-react";
+import { ExportFormat, getColorName, rgbToHex, generateAccessibilityReport, adjustLuminance, simulateProtanopia, simulateDeuteranopia, simulateTritanopia, ColorBlindnessMode } from '../lib/colorUtils';
+import { useState, useMemo } from 'react';
+import ColorCard from './ColorCard';
+import AccessibilityReport from './AccessibilityReport';
 
 interface ColorPaletteProps {
   colors: number[][];
-  layout: "grid" | "list" | "gradient";
   isDarkMode: boolean;
+  isAnalyzing: boolean;
+  exportFormat: ExportFormat;
+  setExportFormat: (format: ExportFormat) => void;
   onMouseEnter: (color: number[], event: React.MouseEvent) => void;
   onMouseLeave: () => void;
   onColorClick: (color: number[]) => void;
+  onDownload: () => void;
+  onPreview: () => void;
 }
 
-const ColorPalette: React.FC<ColorPaletteProps> = ({
-  colors,
-  layout,
-  isDarkMode,
-  onMouseEnter,
-  onMouseLeave,
-  onColorClick,
-}) => {
-  return (
-    <div
-      className={cn(
-        "w-full h-full transition-all duration-500 ease-in-out",
-        layout === "grid" &&
-          "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4",
-        layout === "list" && "flex flex-col gap-4 p-4",
-        layout === "gradient" && "flex flex-col items-center justify-center p-8"
-      )}
-    >
-      {layout === "grid" &&
-        colors.map((color, i) => (
-          <ColorCard
-            key={i}
-            color={color}
-            index={i}
-            isDarkMode={isDarkMode}
-            onMouseEnter={(event) => onMouseEnter(color, event)}   // ✅ FIX
-            onMouseLeave={onMouseLeave}
-            onClick={() => onColorClick(color)}                    // ✅ konsisten
-          />
-        ))}
+type ViewMode = 'grid' | 'list' | 'gradient';
 
-      {layout === "list" &&
-        colors.map((color, i) => (
-          <ColorRow
-            key={i}
-            color={color}
-            index={i}
-            isDarkMode={isDarkMode}
-            onMouseEnter={(event) => onMouseEnter(color, event)}
-            onMouseLeave={onMouseLeave}
-            onClick={() => onColorClick(color)}
-          />
-        ))}
+const ColorPalette = ({ 
+  colors, 
+  isDarkMode, 
+  isAnalyzing, 
+  exportFormat, 
+  setExportFormat, 
+  onMouseEnter, 
+  onMouseLeave, 
+  onColorClick, 
+  onDownload,
+  onPreview 
+}: ColorPaletteProps) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [customPresets, setCustomPresets] = useState<{ [key: string]: number[][] }>({});
 
-      {layout === "gradient" && (
-        <GradientDisplay
-          colors={colors}
-          isDarkMode={isDarkMode}
-          onMouseEnter={(event) => {
-            const midColor = colors[Math.floor(colors.length / 2)];
-            onMouseEnter(midColor, event);
-          }}
-          onMouseLeave={onMouseLeave}
-          onClick={() => onColorClick(colors[Math.floor(colors.length / 2)])}
-        />
-      )}
-    </div>
-  );
-};
-
-interface ColorCardProps {
-  color: number[];
-  index: number;
-  isDarkMode: boolean;
-  onMouseEnter: (event: React.MouseEvent) => void;
-  onMouseLeave: () => void;
-  onClick: () => void;
-}
-
-const ColorCard: React.FC<ColorCardProps> = ({
-  color,
-  index,
-  isDarkMode,
-  onMouseEnter,
-  onMouseLeave,
-  onClick,
-}) => {
-  const [copied, setCopied] = useState(false);
-  const colorString = `rgb(${color.join(",")})`;
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(colorString).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const saveCustomPreset = (name: string, colors: number[][]) => {
+    setCustomPresets((prev) => ({
+      ...prev,
+      [name]: colors,
+    }));
+    // Note: localStorage is not available in Vercel deployment environment
+    // This would need to be implemented with a different storage solution
   };
 
-  return (
-    <div
-      className="group relative aspect-square cursor-pointer rounded-xl shadow-lg overflow-hidden transform transition-transform duration-300 hover:scale-105"
-      style={{ backgroundColor: colorString }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
-      <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-sm text-white text-xs p-2 flex justify-between items-center translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-        <span>{colorString}</span>
-        <button
-          onClick={handleCopy}
-          className="p-1 hover:bg-white/20 rounded transition-colors"
-        >
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-        </button>
-      </div>
-    </div>
-  );
-};
+  const [showAccessibilityReport, setShowAccessibilityReport] = useState(false);
+  const [luminance, setLuminance] = useState(0);
+  const [colorBlindnessMode, setColorBlindnessMode] = useState<ColorBlindnessMode>('normal');
+  
+  // Apply luminance adjustment and color blindness simulation to colors
+  const adjustedColors = useMemo(() => {
+    if (!colors) return colors;
+    
+    let processedColors = colors;
+    
+    // Apply luminance adjustment
+    if (luminance !== 0) {
+      processedColors = processedColors.map(color => adjustLuminance(color, luminance));
+    }
+    
+    // Apply color blindness simulation
+    if (colorBlindnessMode !== 'normal') {
+      processedColors = processedColors.map(color => {
+        switch (colorBlindnessMode) {
+          case 'protanopia':
+            return simulateProtanopia(color);
+          case 'deuteranopia':
+            return simulateDeuteranopia(color);
+          case 'tritanopia':
+            return simulateTritanopia(color);
+          default:
+            return color;
+        }
+      });
+    }
+    
+    return processedColors;
+  }, [colors, luminance, colorBlindnessMode]);
 
-interface ColorRowProps {
-  color: number[];
-  index: number;
-  isDarkMode: boolean;
-  onMouseEnter: (event: React.MouseEvent) => void;
-  onMouseLeave: () => void;
-  onClick: () => void;
-}
-
-const ColorRow: React.FC<ColorRowProps> = ({
-  color,
-  index,
-  isDarkMode,
-  onMouseEnter,
-  onMouseLeave,
-  onClick,
-}) => {
-  const [copied, setCopied] = useState(false);
-  const colorString = `rgb(${color.join(",")})`;
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(colorString).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const handleColorCardMouseEnter = (event: React.MouseEvent, color: number[]) => {
+    onMouseEnter(color, event);
   };
 
-  return (
-    <div
-      className="group relative h-20 rounded-lg shadow-md overflow-hidden cursor-pointer flex items-center transition-transform duration-300 hover:scale-[1.02]"
-      style={{ backgroundColor: colorString }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm text-white text-sm p-3 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <span>{colorString}</span>
-        <button
-          onClick={handleCopy}
-          className="p-1 hover:bg-white/20 rounded transition-colors"
-        >
-          {copied ? <Check size={16} /> : <Copy size={16} />}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-interface GradientDisplayProps {
-  colors: number[][];
-  isDarkMode: boolean;
-  onMouseEnter: (event: React.MouseEvent) => void;
-  onMouseLeave: () => void;
-  onClick: () => void;
-}
-
-const GradientDisplay: React.FC<GradientDisplayProps> = ({
-  colors,
-  isDarkMode,
-  onMouseEnter,
-  onMouseLeave,
-  onClick,
-}) => {
-  const [copied, setCopied] = useState(false);
-  const gradientString = `linear-gradient(to right, ${colors
-    .map((c) => `rgb(${c.join(",")})`)
-    .join(", ")})`;
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(gradientString).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
+  if (!adjustedColors || isAnalyzing) return null;
 
   return (
-    <div
-      className="group relative w-full h-40 rounded-xl shadow-lg cursor-pointer overflow-hidden transition-transform duration-300 hover:scale-[1.02]"
-      style={{ background: gradientString }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={onClick}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm text-white text-sm p-3 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <span>Gradient</span>
-        <button
-          onClick={handleCopy}
-          className="p-1 hover:bg-white/20 rounded transition-colors"
-        >
-          {copied ? <Check size={18} /> : <Copy size={18} />}
-        </button>
+    <div className={`w-full max-w-6xl rounded-3xl shadow-2xl transition-all duration-500 ${
+      isDarkMode ? 'bg-gray-800/50 backdrop-blur-lg' : 'bg-white/70 backdrop-blur-lg'
+    }`}>
+      <div className="p-8">
+        <div className="flex flex-col items-center mb-8">
+          <h2 className={`text-4xl font-bold text-center mb-4 transition-colors duration-300 ${
+            isDarkMode ? 'text-gray-100' : 'text-gray-800'
+          }`}>
+            Extracted Color Palette ({adjustedColors.length} colors)
+          </h2>
+          
+          {/* View Mode Toggle */}
+          <div className={`flex rounded-2xl p-1 transition-all duration-300 mb-4 ${
+            isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
+          }`}>
+            {(['grid', 'list', 'gradient'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-6 py-2 rounded-xl transition-all duration-300 font-semibold capitalize ${
+                  viewMode === mode
+                    ? isDarkMode
+                      ? 'bg-purple-600 text-white shadow-lg'
+                      : 'bg-blue-600 text-white shadow-lg'
+                    : isDarkMode
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-600'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          {/* Luminance Slider */}
+          <div className="w-full max-w-md">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Luminance Adjustment: {luminance > 0 ? `+${luminance}%` : `${luminance}%`}
+            </label>
+            <input
+              type="range"
+              min="-50"
+              max="50"
+              value={luminance}
+              onChange={(e) => setLuminance(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              title="Adjust luminance level"
+              style={{
+                background: `linear-gradient(to right, 
+                  ${isDarkMode ? '#4b5563' : '#d1d5db'} 0%, 
+                  ${isDarkMode ? '#9ca3af' : '#9ca3af'} 50%, 
+                  ${isDarkMode ? '#e5e7eb' : '#f3f4f6'} 100%)`
+              }}
+            />
+            <div className="flex justify-between text-xs mt-1">
+              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>-50%</span>
+              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>0%</span>
+              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>+50%</span>
+            </div>
+          </div>
+
+          {/* Save Custom Preset */}
+          <div className="w-full max-w-md mt-6">
+            <button
+              onClick={() => {
+                const presetName = prompt("Enter a name for your custom preset:");
+                if (presetName) {
+                  // Save the current palette as a preset
+                  saveCustomPreset(presetName, adjustedColors);
+                }
+              }}
+              className={`px-4 py-2 rounded-xl transition-all duration-300 font-semibold ${
+                isDarkMode ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
+              }`}
+            >
+              Save Custom Preset
+            </button>
+          </div>
+
+          {/* Color Blindness Mode Selector */}
+          <div className="w-full max-w-md mt-6">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Color Blindness Simulation
+            </label>
+            <div className={`flex rounded-2xl p-1 transition-all duration-300 ${
+              isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
+            }`}>
+              {(['normal', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setColorBlindnessMode(mode)}
+                  className={`px-4 py-2 rounded-xl transition-all duration-300 font-semibold text-sm capitalize ${
+                    colorBlindnessMode === mode
+                      ? isDarkMode
+                        ? 'bg-purple-600 text-white shadow-lg'
+                        : 'bg-blue-600 text-white shadow-lg'
+                      : isDarkMode
+                        ? 'text-gray-300 hover:text-white hover:bg-gray-600'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                  }`}
+                >
+                  {mode === 'normal' ? 'Normal' : 
+                   mode === 'protanopia' ? 'Protanopia' :
+                   mode === 'deuteranopia' ? 'Deuteranopia' : 'Tritanopia'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* View Mode Content */}
+        {viewMode === 'grid' && (
+          <>
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-6 gap-6 mb-8">
+              {adjustedColors.map((color, i) => (
+                <ColorCard
+                  key={i}
+                  color={color}
+                  index={i}
+                  isDarkMode={isDarkMode}
+                  onMouseEnter={(event) => handleColorCardMouseEnter(event, color)}
+                  onMouseLeave={onMouseLeave}
+                  onClick={onColorClick}
+                />
+              ))}
+            </div>
+
+            {/* Mobile Horizontal Scroll */}
+            <div className="md:hidden mb-8">
+              <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
+                {adjustedColors.map((color, i) => (
+                  <div key={i} className="flex-shrink-0">
+                    <ColorCard
+                      color={color}
+                      index={i}
+                      isDarkMode={isDarkMode}
+                      onMouseEnter={(event) => handleColorCardMouseEnter(event, color)}
+                      onMouseLeave={onMouseLeave}
+                      onClick={onColorClick}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {viewMode === 'list' && (
+          <div className="mb-8">
+            <div className="grid gap-4">
+              {adjustedColors.map((color, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center p-4 rounded-2xl transition-all duration-300 cursor-pointer hover:scale-102 ${
+                    isDarkMode ? 'bg-gray-700/50 hover:bg-gray-600/50' : 'bg-gray-100/50 hover:bg-white/50'
+                  }`}
+                  onClick={() => onColorClick(color)}
+                  onMouseEnter={(event) => onMouseEnter(color, event)}
+                  onMouseLeave={onMouseLeave}
+                >
+                  <div
+                    className="w-16 h-16 rounded-xl mr-4 shadow-inner"
+                    style={{ backgroundColor: `rgb(${color.join(',')})` }}
+                  />
+                  <div className="flex-1">
+                    <div className={`font-bold text-lg transition-colors duration-300 ${
+                      isDarkMode ? 'text-gray-100' : 'text-gray-800'
+                    }`}>
+                      {getColorName(color)}
+                    </div>
+                    <div className={`text-sm font-mono transition-colors duration-300 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      RGB({color.join(', ')})
+                    </div>
+                    <div className={`text-sm font-mono transition-colors duration-300 ${
+                      isDarkMode ? 'text-gray-500' : 'text-gray-500'
+                    }`}>
+                      {rgbToHex(color[0], color[1], color[2])}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'gradient' && (
+          <div className="mb-8">
+            <div
+              className="w-full h-48 rounded-2xl shadow-inner mb-4"
+              style={{
+                background: `linear-gradient(to right, ${adjustedColors.map(color => `rgb(${color.join(',')})`).join(', ')})`
+              }}
+            />
+            <div className="grid grid-cols-6 gap-2">
+              {adjustedColors.map((color, i) => (
+                <div
+                  key={i}
+                  className="h-8 rounded-lg cursor-pointer transition-transform duration-300 hover:scale-105"
+                  style={{ backgroundColor: `rgb(${color.join(',')})` }}
+                  onClick={() => onColorClick(color)}
+                  onMouseEnter={(event) => onMouseEnter(color, event)}
+                  onMouseLeave={onMouseLeave}
+                  title={`${getColorName(color)} - ${rgbToHex(color[0], color[1], color[2])}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Export Format Selector */}
+        <div className="flex justify-center mb-6">
+          <div className={`flex rounded-2xl p-2 transition-all duration-300 ${
+            isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
+          }`}>
+            {(['json', 'css', 'png'] as const).map((format) => (
+              <button
+                key={format}
+                onClick={() => setExportFormat(format)}
+                className={`px-6 py-3 rounded-xl transition-all duration-300 font-semibold ${
+                  exportFormat === format
+                    ? isDarkMode
+                      ? 'bg-purple-600 text-white shadow-lg'
+                      : 'bg-blue-600 text-white shadow-lg'
+                    : isDarkMode
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-600'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                }`}
+              >
+                {format.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={() => setShowAccessibilityReport(!showAccessibilityReport)}
+            className={`px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-bold text-lg ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500'
+                : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500'
+            }`}
+          >
+            {showAccessibilityReport ? '📊 Hide Accessibility' : '📊 Show Accessibility'}
+          </button>
+          
+          <button
+            onClick={onPreview}
+            className={`px-10 py-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-bold text-lg ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-500 hover:to-red-500'
+                : 'bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-500 hover:to-red-500'
+            }`}
+          >
+            🎨 Preview Colors
+          </button>
+          
+          <button
+            onClick={onDownload}
+            className={`px-10 py-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 font-bold text-lg ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-500 hover:to-purple-500'
+            }`}
+          >
+            {exportFormat === 'json' ? '💾 Download JSON' : 
+             exportFormat === 'css' ? '📄 Download CSS' : 
+             '🖼️ Download PNG Strip'}
+          </button>
+        </div>
+
+        {/* Accessibility Report */}
+        {showAccessibilityReport && (
+          <div className="mt-8">
+            <AccessibilityReport 
+              report={generateAccessibilityReport(colors)}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
