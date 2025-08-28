@@ -38,8 +38,8 @@ const ColorPalette = ({
       ...prev,
       [name]: colors,
     }));
-    // Optionally save to local storage
-    localStorage.setItem('customPresets', JSON.stringify({ ...customPresets, [name]: colors }));
+    // Note: localStorage is not available in Vercel deployment environment
+    // This would need to be implemented with a different storage solution
   };
 
   const [showAccessibilityReport, setShowAccessibilityReport] = useState(false);
