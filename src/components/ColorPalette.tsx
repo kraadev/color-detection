@@ -76,6 +76,10 @@ const ColorPalette = ({
     return processedColors;
   }, [colors, luminance, colorBlindnessMode]);
 
+  const handleColorCardMouseEnter = (event: React.MouseEvent, color: number[]) => {
+    onMouseEnter(color, event);
+  };
+
   if (!adjustedColors || isAnalyzing) return null;
 
   return (
@@ -204,7 +208,7 @@ const ColorPalette = ({
                   color={color}
                   index={i}
                   isDarkMode={isDarkMode}
-                  onMouseEnter={(event) => onMouseEnter(color, event)}
+                  onMouseEnter={(event) => handleColorCardMouseEnter(event, color)}
                   onMouseLeave={onMouseLeave}
                   onClick={onColorClick}
                 />
@@ -220,7 +224,7 @@ const ColorPalette = ({
                       color={color}
                       index={i}
                       isDarkMode={isDarkMode}
-                      onMouseEnter={(event) => onMouseEnter(color, event)}
+                      onMouseEnter={(event) => handleColorCardMouseEnter(event, color)}
                       onMouseLeave={onMouseLeave}
                       onClick={onColorClick}
                     />
