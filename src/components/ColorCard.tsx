@@ -14,7 +14,7 @@ const ColorCard = ({ color, index, isDarkMode, onMouseEnter, onMouseLeave, onCli
   <div
     className="group cursor-pointer transform transition-all duration-500 hover:scale-110 hover:-translate-y-3 animate-slide-in-up"
     onClick={() => onClick(color)}
-    onMouseEnter={(event) => onMouseEnter(color, event)}
+    onMouseEnter={(event) => onMouseEnter(color, event)}   // ✅ color + event
     onMouseLeave={onMouseLeave}
     style={{ animationDelay: `${index * 150}ms` }}
   >
