@@ -183,7 +183,8 @@ export default function InteractiveColorDetector() {
     }
   };
 
-const handleMouseEnter = (color: number[], event: React.MouseEvent) => {
+  // Fixed parameter order to match ColorPalette interface
+  const handleColorHover = (event: React.MouseEvent, color: number[]) => {
     document.body.style.transition = "background 0.8s ease";
     document.body.style.background = `rgb(${color.join(",")})`;
     
@@ -345,6 +346,11 @@ const handleMouseEnter = (color: number[], event: React.MouseEvent) => {
     URL.revokeObjectURL(url);
   };
 
+  // Fixed parameter order for ColorHarmony onMouseEnter
+  const handleMouseEnterHarmony = (event: React.MouseEvent, color: number[]) => {
+    handleColorHover(event, color);
+  };
+
   return (
     <div className={`min-h-screen transition-all duration-500 ${
       isDarkMode 
@@ -457,7 +463,7 @@ const handleMouseEnter = (color: number[], event: React.MouseEvent) => {
               isAnalyzing={isAnalyzing}
               exportFormat={exportFormat}
               setExportFormat={setExportFormat}
-              onColorHover={handleMouseEnter}   // ✅ ganti dengan nama baru
+              onColorHover={handleColorHover}
               onMouseLeave={handleMouseLeave}
               onColorClick={handleColorClick}
               onDownload={handleDownload}
@@ -500,7 +506,7 @@ const handleMouseEnter = (color: number[], event: React.MouseEvent) => {
       <ColorHarmony 
         selectedColor={selectedColor} 
         isDarkMode={isDarkMode} 
-        onMouseEnter={handleMouseEnter} 
+        onMouseEnter={handleMouseEnterHarmony}
         onMouseLeave={handleMouseLeave} 
         onColorClick={handleColorClick} 
       />
