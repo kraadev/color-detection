@@ -347,7 +347,7 @@ export default function InteractiveColorDetector() {
   };
 
   // Fixed parameter order for ColorHarmony onMouseEnter
-  const handleMouseEnterHarmony = (event: React.MouseEvent, color: number[]) => {
+  const handleMouseEnterHarmony = (color: number[], event: React.MouseEvent) => {
     handleColorHover(event, color);
   };
 
