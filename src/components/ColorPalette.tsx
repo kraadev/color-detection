@@ -41,13 +41,10 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
   onPreview,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [customPresets, setCustomPresets] = useState<Record<string, number[][]>>({});
 
   const saveCustomPreset = (name: string, colorsToSave: number[][]) => {
-    setCustomPresets((prev) => ({
-      ...prev,
-      [name]: colorsToSave,
-    }));
+    // Save the custom preset (implementation would depend on your storage solution)
+    console.log('Saving preset:', name, colorsToSave);
     // Note: localStorage is not available in some SSR environments.
     // If you want persistence across sessions, implement a server-side or IndexedDB solution
     // and guard with `typeof window !== 'undefined'` when accessing client-only APIs.
@@ -277,7 +274,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                     isDarkMode ? 'bg-gray-700/50 hover:bg-gray-600/50' : 'bg-gray-100/50 hover:bg-white/50'
                   }`}
                   onClick={() => onColorClick(color)}
-                  onMouseEnter={(event) => onMouseEnter(color, event)}
+                  onMouseEnter={(event) => onColorHover && onColorHover(event, color)}
                   onMouseLeave={onMouseLeave}
                 >
                   <div
@@ -330,7 +327,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                   className="h-8 rounded-lg cursor-pointer transition-transform duration-300 hover:scale-105"
                   style={{ backgroundColor: `rgb(${color.join(',')})` }}
                   onClick={() => onColorClick(color)}
-                  onMouseEnter={(event) => onMouseEnter(color, event)}
+                  onMouseEnter={(event) => onColorHover && onColorHover(event, color)}
                   onMouseLeave={onMouseLeave}
                   title={`${getColorName(color)} - ${rgbToHex(color[0], color[1], color[2])}`}
                 />
