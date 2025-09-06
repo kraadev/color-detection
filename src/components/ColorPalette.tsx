@@ -236,7 +236,10 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                   color={color}
                   index={i}
                   isDarkMode={isDarkMode}
-                  onMouseEnter={(event) => { onColorHover(color, event); }}
+                  onMouseEnter={(event) => {
+  if (onColorHover) onColorHover(color, event);
+}}
+
                   onMouseLeave={onMouseLeave}
                   onClick={onColorClick}
                 />
@@ -252,7 +255,10 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                       color={color}
                       index={i}
                       isDarkMode={isDarkMode}
-                      onMouseEnter={(event) => { onColorHover(color, event); }}
+                      onMouseEnter={(event) => {
+  if (onColorHover) onColorHover(color, event);
+}}
+
                       onMouseLeave={onMouseLeave}
                       onClick={onColorClick}
                     />
