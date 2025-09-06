@@ -19,7 +19,7 @@ interface ColorPaletteProps {
   isAnalyzing: boolean;
   exportFormat: ExportFormat;
   setExportFormat: (format: ExportFormat) => void;
-  onMouseEnter: (color: number[], event: React.MouseEvent) => void;
+  onColorHover: (color: number[], event: React.MouseEvent) => void;
   onMouseLeave: () => void;
   onColorClick: (color: number[]) => void;
   onDownload: () => void;
@@ -236,7 +236,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                   color={color}
                   index={i}
                   isDarkMode={isDarkMode}
-                  onMouseEnter={(event) => { onMouseEnter(color, event); }}
+                  onMouseEnter={(event) => { onColorHover(color, event); }}
                   onMouseLeave={onMouseLeave}
                   onClick={onColorClick}
                 />
@@ -252,7 +252,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                       color={color}
                       index={i}
                       isDarkMode={isDarkMode}
-                      onMouseEnter={(event) => { onMouseEnter(color, event); }}
+                      onMouseEnter={(event) => { onColorHover(color, event); }}
                       onMouseLeave={onMouseLeave}
                       onClick={onColorClick}
                     />
