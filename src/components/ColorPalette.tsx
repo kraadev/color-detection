@@ -87,8 +87,8 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
     return processedColors;
   }, [colors, luminance, colorBlindnessMode]);
 
-  const handleColorCardMouseEnter = (event: React.MouseEvent, color: number[]) => {
-    onMouseEnter(color, event);
+  const handleColorCardMouseEnter = (color: number[], event: React.MouseEvent) => {
+  onMouseEnter(color, event);
   };
 
   // If analyzing, don't render the palette; return null early.
@@ -238,7 +238,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                   color={color}
                   index={i}
                   isDarkMode={isDarkMode}
-                  onMouseEnter={(event: React.MouseEvent) => handleColorCardMouseEnter(event, color)}
+                  onMouseEnter={(event) => handleColorCardMouseEnter(color, event)}
                   onMouseLeave={onMouseLeave}
                   onClick={onColorClick}
                 />
@@ -254,7 +254,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
                       color={color}
                       index={i}
                       isDarkMode={isDarkMode}
-                      onMouseEnter={(event: React.MouseEvent) => handleColorCardMouseEnter(event, color)}
+                      onMouseEnter={(event) => handleColorCardMouseEnter(color, event)}
                       onMouseLeave={onMouseLeave}
                       onClick={onColorClick}
                     />
