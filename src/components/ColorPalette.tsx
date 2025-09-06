@@ -34,7 +34,7 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
   isAnalyzing,
   exportFormat,
   setExportFormat,
-  onMouseEnter,
+  onColorHover,
   onMouseLeave,
   onColorClick,
   onDownload,
