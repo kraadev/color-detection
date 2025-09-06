@@ -506,7 +506,7 @@ export default function InteractiveColorDetector() {
       <ColorHarmony 
         selectedColor={selectedColor} 
         isDarkMode={isDarkMode} 
-        onMouseEnter={handleMouseEnterHarmony}
+        onMouseEnter={handleColorHover}
         onMouseLeave={handleMouseLeave} 
         onColorClick={handleColorClick} 
       />

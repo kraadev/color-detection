@@ -4,7 +4,7 @@ import ColorCard from './ColorCard';
 interface ColorHarmonyProps {
   selectedColor: string | null;
   isDarkMode: boolean;
-  onMouseEnter: (color: number[], event: React.MouseEvent) => void;
+  onMouseEnter: (event: React.MouseEvent, color: number[]) => void;
   onMouseLeave: () => void;
   onColorClick: (color: number[]) => void;
 }
