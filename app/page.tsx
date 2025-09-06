@@ -457,7 +457,7 @@ const handleMouseEnter = (color: number[], event: React.MouseEvent) => {
               isAnalyzing={isAnalyzing}
               exportFormat={exportFormat}
               setExportFormat={setExportFormat}
-              onMouseEnter={handleMouseEnter}
+              onColorHover={handleMouseEnter}   // ✅ ganti dengan nama baru
               onMouseLeave={handleMouseLeave}
               onColorClick={handleColorClick}
               onDownload={handleDownload}
