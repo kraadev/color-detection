@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://color-detection-lyart.vercel.app
+
+# Sitemaps
+Sitemap: https://color-detection-lyart.vercel.app/sitemap.xml
