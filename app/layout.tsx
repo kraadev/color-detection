@@ -26,13 +26,12 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Color Detection - Extract Colors from Images",
-    description:
-      "Upload an image and generate beautiful color palettes instantly.",
+    description: "Upload an image and generate beautiful color palettes instantly.",
     url: "https://color-detection-lyart.vercel.app",
     siteName: "Color Detection",
     images: [
       {
-        url: "https://color-detection-lyart.vercel.app/og-image.png", // bukan localhost
+        url: "https://color-detection-lyart.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Color Detection Preview",
@@ -44,13 +43,15 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Color Detection - Extract Colors from Images",
-    description:
-      "Generate color palettes and detect dominant colors from images.",
+    description: "Generate color palettes and detect dominant colors from images.",
     images: ["https://color-detection-lyart.vercel.app/og-image.png"],
   },
   robots: {
     index: true,
     follow: true,
+  },
+  verification: {
+    google: "iV04NRObdMxsqxXf9h5NnubCR1vZs7gQg-Ogoj3Dcp4",
   },
 };
 
